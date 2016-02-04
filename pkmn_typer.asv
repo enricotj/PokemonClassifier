@@ -67,18 +67,18 @@ function genData = loadPkmn(gen_dir)
         fileName = strcat(gen_dir,'\',files(fileIndex(i)).name);
         [img map alpha] = imread(fileName);
         img(img == 255) = 0;
-        imtool(img);
+        ind = find(
         
         % Get LST-space data
         lstmap(:,1) = (map(:,1) + map(:,2) + map(:,3))/3;
         lstmap(:,2) = (map(:,1) - map(:,3))/2+0.5;
         lstmap(:,3) = (map(:,1) - 2*map(:,2) + map(:,3))/4+0.5;
-        % figure, imshow(img,map);
+        imtool(img);
+        figure, imshow(img,map);
+        disp(map);
+        
+        % Combine same-hue
         
         % What features do we want to extract?
-        % Color data
-        for j=1:size(map,1)
-            
-        end
     end
 end
