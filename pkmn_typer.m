@@ -76,9 +76,30 @@ function genData = loadPkmn(gen_dir)
         % figure, imshow(img,map);
         
         % What features do we want to extract?
-        % Color data
-        for j=1:size(map,1)
-            
+        
+        % ****************************************************************
+        % Color Data
+        % ****************************************************************
+        pkmnSize = size(find(img ~= 0), 1);
+        weights = zeros(size(map,1), 1);
+        for j=2:size(map,1) %ignore first map entry (it's the background)
+            num = size(find(img == j), 1);
+            weights(j) = num / pkmnSize;
         end
+        [wsort I] = sort(weights, 'descend');
+        cfv = zeros(20, 1); % color feature vector
+        for j=1:5
+            ind = I(j); % get original map index
+            c = (j-1)*4 + 1; % color feature vector index
+            cfv(c) = weights(ind);      % weight
+            cfv(c+1) = lstmap(ind, 1);  % L
+            cfv(c+2) = lstmap(ind, 2);  % S
+            cfv(c+3) = lstmap(ind, 3);  % T
+        end
+        
+        % ****************************************************************
+        % Edginess Data
+        % ****************************************************************
+        
     end
 end
