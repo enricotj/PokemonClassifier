@@ -36,8 +36,8 @@ end
 
 % grey should be a greyscale image.
 function [horiz,vert,sum,gradMag,gradDir,dirStrong] = sobel(grey)
-    sobelH = [-1 0 1;-2 0 2;-1 0 1];
-    sobelV = [1 2 1;0 0 0;-1 -2 -1];
+    sobelH = [-1 0 1;-2 0 2;-1 0 1]/8;
+    sobelV = [1 2 1;0 0 0;-1 -2 -1]/8;
     horiz = filter2(sobelH, grey);
     vert = filter2(sobelV, grey);
     sum = horiz + vert;

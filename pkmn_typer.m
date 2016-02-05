@@ -70,6 +70,7 @@ function genData = loadPkmn(gen_dir)
         %imtool(img);
         
         % Get LST-space data
+        clear lstmap;
         lstmap(:,1) = (map(:,1) + map(:,2) + map(:,3))/3;
         lstmap(:,2) = (map(:,1) - map(:,3))/2+0.5;
         lstmap(:,3) = (map(:,1) - 2*map(:,2) + map(:,3))/4+0.5;
@@ -103,7 +104,22 @@ function genData = loadPkmn(gen_dir)
         % ****************************************************************
         % compensate for background color
         map(1,:) = [1 1 1];
+        gray = ind2gray(img,map);
+        
+        [h,v,s,gm,gd,d] = sobel(gray);
+        disp(numel(find(gm > 50)));
     end
-    disp(min);
-    disp(mi);
+end
+
+function [horiz,vert,sum,gradMag,gradDir,dirStrong] = sobel(grey)
+    sobelH = [-1 0 1;-2 0 2;-1 0 1]/8;
+    sobelV = [1 2 1;0 0 0;-1 -2 -1]/8;
+    horiz = filter2(sobelH, grey);
+    vert = filter2(sobelV, grey);
+    sum = horiz + vert;
+    gradMag = sqrt(horiz.^2 + vert.^2);
+    gradDir = atan2(vert, horiz);
+    minDir = 50;    % defined by trial and error
+    dirStrong = zeros(size(grey));
+    dirStrong(gradMag > minDir) = gradDir(gradMag > minDir);
 end
