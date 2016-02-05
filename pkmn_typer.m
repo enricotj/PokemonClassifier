@@ -8,6 +8,8 @@ function [] = pkmn_typer()
         [typeNames, pkmnNames] = loadNames('pokemon\data\types.csv', ...
             'pokemon\data\pokemon_species.csv');
         printTypes(pkmnNames,pkmnTypes,typeNames);
+        targets = buildTargetMatrix(pkmnTypes);
+        
         disp('loading: Gen I');
         gen1 = loadPkmn('pokemon\gen1');
         disp('loading: Gen II');
@@ -20,10 +22,10 @@ function [] = pkmn_typer()
         gen5 = loadPkmn('pokemon\gen5');
 %         disp('loading: Gen VI');
 %         gen6 = loadPkmn('pokemon\gen6');
-        %pokemon = [gen1;gen2;gen3;gen4;gen5];
+
         % How do we need to normalize the data?
-        features = [gen1 gen2 gen3 gen4 gen5];
-        save('features.mat', 'features');
+        pokemon = [gen1 gen2 gen3 gen4 gen5];
+        save('pkmn.mat', 'pokemon', 'targets');
 %         save('pkmn.mat', ...
 %         'gen1', 'gen2', 'gen3', 'gen4', 'gen5' ...
 %         'pkmnNames', 'pkmnTypes', 'typeNames');
@@ -142,4 +144,17 @@ function [horiz,vert,sum,gradMag,gradDir,dirStrong] = sobel(grey)
     minDir = 50;    % defined by trial and error
     dirStrong = zeros(size(grey));
     dirStrong(gradMag > minDir) = gradDir(gradMag > minDir);
+end
+
+% add after end of pkmn_typer function
+function targets = buildTargetMatrix(typeList)
+    % typeList has Pokemon types in a 721x2 matrix.
+    targets = zeros(18,721);
+    for i=1:721
+        targets(typeList(i,1),i) = 1;
+        if(typeList(i,2) > 0)
+            targets(typeList(i,2),i) = 1;
+        end
+    end
+    imtool(targets);
 end

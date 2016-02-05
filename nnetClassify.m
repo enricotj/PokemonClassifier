@@ -19,26 +19,26 @@ function [] = nnetClassify(inputs, targets, test, testTargets, layers)
     net.trainParam.showWindow=0;
 
     % Set up Division of Data for Training, Validation, Testing
-    net.divideParam.trainRatio = 100/100;
-    net.divideParam.valRatio = 0/100;
-    net.divideParam.testRatio = 0/100;
+    net.divideParam.trainRatio = 90/100;
+    net.divideParam.valRatio = 5/100;
+    net.divideParam.testRatio = 5/100;
 
     % Train the Network
     [net,tr] = train(net,inputs,targets);
 
     % Test the Network
-    outputs = net(test);
-    %errors = gsubtract(testTargets,outputs)
-    %performance = perform(net,testTargets,outputs)
+    outputs = net(inputs);
+    errors = gsubtract(targets,outputs);
+    performance = perform(net,targets,outputs);
 
     % View the Network
-    %view(net)
+    % view(net)
 
     % Plots
     % Uncomment these lines to enable various plots.
     %figure, plotperform(tr)
     %figure, plottrainstate(tr)
-    %figure, plotconfusion(testTargets,outputs)
+    figure, plotconfusion(targets,outputs)
     %figure, ploterrhist(errors)
-    figure, plotroc(testTargets, outputs);
+    %figure, plotroc(targets, outputs);
 end
