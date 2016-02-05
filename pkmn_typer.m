@@ -10,17 +10,17 @@ function [] = pkmn_typer()
         printTypes(pkmnNames,pkmnTypes,typeNames);
         disp('loading: Gen I');
         gen1 = loadPkmn('pokemon\gen1');
-        disp('loading: Gen II');
-        gen2 = loadPkmn('pokemon\gen2');
-        disp('loading: Gen III');
-        gen3 = loadPkmn('pokemon\gen3');
-        disp('loading: Gen IV');
-        gen4 = loadPkmn('pokemon\gen4');
-        disp('loading: Gen V');
-        gen5 = loadPkmn('pokemon\gen5');
+%         disp('loading: Gen II');
+%         gen2 = loadPkmn('pokemon\gen2');
+%         disp('loading: Gen III');
+%         gen3 = loadPkmn('pokemon\gen3');
+%         disp('loading: Gen IV');
+%         gen4 = loadPkmn('pokemon\gen4');
+%         disp('loading: Gen V');
+%         gen5 = loadPkmn('pokemon\gen5');
         %disp('loading: Gen VI');
         %gen6 = loadPkmn('pokemon\gen6');
-        pokemon = [gen1;gen2;gen3;gen4;gen5];
+%         pokemon = [gen1;gen2;gen3;gen4;gen5];
         % How do we need to normalize the data?
         % save('pkmn.mat', ...
         % 'gen1', 'gen2', 'gen3', 'gen4', 'gen5' ...
@@ -64,7 +64,7 @@ function genData = loadPkmn(gen_dir)
     dim = 0; % How many features are we using?
     genData = zeros(size(fileIndex,2), dim);
     
-    for i=1:size(fileIndex,2)
+    for i=1:1%size(fileIndex,2)
         fileName = strcat(gen_dir,'\',files(fileIndex(i)).name);
         [img map alpha] = imread(fileName);
         %imtool(img);
@@ -106,8 +106,17 @@ function genData = loadPkmn(gen_dir)
         map(1,:) = [1 1 1];
         gray = ind2gray(img,map);
         
+        % Edge
         [h,v,s,gm,gd,d] = sobel(gray);
-        disp(numel(find(gm > 50)));
+        edgeTotal = sum(sum(gm(2:95,2:95)));
+        
+        % Circularity measure: bodyEcc
+        % ecc.Eccentricity = 0 => circle
+        % ecc.Eccentricity = 1 => line
+        dat = regionprops(img > 0,'Eccentricity','Area');
+        [M,ind] = max([dat.Area]);
+        ecc = [dat.Eccentricity];
+        bodyEcc = ecc(ind);
     end
 end
 
