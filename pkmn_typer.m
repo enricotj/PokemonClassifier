@@ -10,21 +10,23 @@ function [] = pkmn_typer()
         printTypes(pkmnNames,pkmnTypes,typeNames);
         disp('loading: Gen I');
         gen1 = loadPkmn('pokemon\gen1');
-%         disp('loading: Gen II');
-%         gen2 = loadPkmn('pokemon\gen2');
-%         disp('loading: Gen III');
-%         gen3 = loadPkmn('pokemon\gen3');
-%         disp('loading: Gen IV');
-%         gen4 = loadPkmn('pokemon\gen4');
-%         disp('loading: Gen V');
-%         gen5 = loadPkmn('pokemon\gen5');
-        %disp('loading: Gen VI');
-        %gen6 = loadPkmn('pokemon\gen6');
-%         pokemon = [gen1;gen2;gen3;gen4;gen5];
+        disp('loading: Gen II');
+        gen2 = loadPkmn('pokemon\gen2');
+        disp('loading: Gen III');
+        gen3 = loadPkmn('pokemon\gen3');
+        disp('loading: Gen IV');
+        gen4 = loadPkmn('pokemon\gen4');
+        disp('loading: Gen V');
+        gen5 = loadPkmn('pokemon\gen5');
+%         disp('loading: Gen VI');
+%         gen6 = loadPkmn('pokemon\gen6');
+        %pokemon = [gen1;gen2;gen3;gen4;gen5];
         % How do we need to normalize the data?
-        % save('pkmn.mat', ...
-        % 'gen1', 'gen2', 'gen3', 'gen4', 'gen5' ...
-        % 'pkmnNames', 'pkmnTypes', 'typeNames');
+        features = [gen1 gen2 gen3 gen4 gen5];
+        save('features.mat', 'features');
+%         save('pkmn.mat', ...
+%         'gen1', 'gen2', 'gen3', 'gen4', 'gen5' ...
+%         'pkmnNames', 'pkmnTypes', 'typeNames');
     end
     
 end
@@ -61,10 +63,12 @@ function genData = loadPkmn(gen_dir)
     files = dir(gen_dir);
     fileIndex = find(~[files.isdir]);
     
-    dim = 0; % How many features are we using?
-    genData = zeros(size(fileIndex,2), dim);
-    
-    for i=1:1%size(fileIndex,2)
+    cfvSize = 5;
+    efvSize = 2;
+    %dim = 4*cfvSize + efvSize; % How many features are we using?
+    %genData = zeros(size(fileIndex,2), dim);
+    genData = [];
+    for i=1:size(fileIndex,2)
         fileName = strcat(gen_dir,'\',files(fileIndex(i)).name);
         [img map alpha] = imread(fileName);
         %imtool(img);
@@ -75,40 +79,40 @@ function genData = loadPkmn(gen_dir)
         lstmap(:,2) = (map(:,1) - map(:,3))/2+0.5;
         lstmap(:,3) = (map(:,1) - 2*map(:,2) + map(:,3))/4+0.5;
         % figure, imshow(img,map);
-        
         % What features do we want to extract?
         
         % ****************************************************************
         % Color Data
         % ****************************************************************
-%         cfvSize = 5;
-%         pkmnSize = size(find(img ~= 0), 1);
-%         weights = zeros(size(map,1), 1);
-%         for j=2:size(map,1) %ignore first map entry (it's the background)
-%             num = size(find(img == j), 1);
-%             weights(j) = num / pkmnSize;
-%         end
-%         [wsort I] = sort(weights, 'descend');
-%         cfv = zeros(cfvSize*4, 1); % color feature vector
-%         for j=1:cfvSize
-%             ind = I(j); % get original map index
-%             c = (j-1)*4 + 1; % color feature vector index
-%             cfv(c) = weights(ind);      % weight
-%             cfv(c+1) = lstmap(ind, 1);  % L
-%             cfv(c+2) = lstmap(ind, 2);  % S
-%             cfv(c+3) = lstmap(ind, 3);  % T
-%         end
+        pkmnSize = size(find(img ~= 0), 1);
+        weights = zeros(size(map,1), 1);
+        for j=2:size(map,1) %ignore first map entry (it's the background)
+            num = size(find(img == j), 1);
+            weights(j) = num / pkmnSize;
+        end
+        [wsort I] = sort(weights, 'descend');
+        cfv = zeros(cfvSize*4, 1); % color feature vector
+        for j=1:cfvSize
+            ind = I(j); % get original map index
+            c = (j-1)*4 + 1; % color feature vector index
+            cfv(c) = weights(ind);      % weight
+            cfv(c+1) = lstmap(ind, 1);  % L
+            cfv(c+2) = lstmap(ind, 2);  % S
+            cfv(c+3) = lstmap(ind, 3);  % T
+        end
         
         % ****************************************************************
         % Edginess Data
         % ****************************************************************
         % compensate for background color
+        efv = zeros(efvSize, 1);
         map(1,:) = [1 1 1];
         gray = ind2gray(img,map);
         
         % Edge
         [h,v,s,gm,gd,d] = sobel(gray);
         edgeTotal = sum(sum(gm(2:95,2:95)));
+        efv(1) = edgeTotal;
         
         % Circularity measure: bodyEcc
         % ecc.Eccentricity = 0 => circle
@@ -117,6 +121,13 @@ function genData = loadPkmn(gen_dir)
         [M,ind] = max([dat.Area]);
         ecc = [dat.Eccentricity];
         bodyEcc = ecc(ind);
+        efv(2) = bodyEcc;
+        
+        % ****************************************************************
+        % Combine Feature Vectors
+        % ****************************************************************
+        fv = vertcat(cfv, efv);
+        genData = horzcat(genData, fv);
     end
 end
 

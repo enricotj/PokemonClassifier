@@ -18,8 +18,8 @@ function [] = pkmn_typer()
 %         gen4 = loadPkmn('pokemon\gen4');
 %         disp('loading: Gen V');
 %         gen5 = loadPkmn('pokemon\gen5');
-        %disp('loading: Gen VI');
-        %gen6 = loadPkmn('pokemon\gen6');
+%         disp('loading: Gen VI');
+%         gen6 = loadPkmn('pokemon\gen6');
 %         pokemon = [gen1;gen2;gen3;gen4;gen5];
         % How do we need to normalize the data?
         % save('pkmn.mat', ...
@@ -63,8 +63,7 @@ function genData = loadPkmn(gen_dir)
     
     dim = 0; % How many features are we using?
     genData = zeros(size(fileIndex,2), dim);
-    
-    for i=1:size(fileIndex,2)
+    for i=1:1%size(fileIndex,2)
         fileName = strcat(gen_dir,'\',files(fileIndex(i)).name);
         [img map alpha] = imread(fileName);
         %imtool(img);
@@ -81,7 +80,6 @@ function genData = loadPkmn(gen_dir)
         % ****************************************************************
         % Color Data
         % ****************************************************************
-%         cfvSize = 5;
 %         pkmnSize = size(find(img ~= 0), 1);
 %         weights = zeros(size(map,1), 1);
 %         for j=2:size(map,1) %ignore first map entry (it's the background)
@@ -103,18 +101,26 @@ function genData = loadPkmn(gen_dir)
         % Edginess Data
         % ****************************************************************
         % compensate for background color
+        efv = zeros(2, 1);
         map(1,:) = [1 1 1];
         gray = ind2gray(img,map);
         
+        % Edge
         [h,v,s,gm,gd,d] = sobel(gray);
         edgeTotal = sum(sum(gm(2:95,2:95)));
+        efv(1) = edgeTotal;
         
-        % Circularity measure
+        % Circularity measure: bodyEcc
         % ecc.Eccentricity = 0 => circle
         % ecc.Eccentricity = 1 => line
         dat = regionprops(img > 0,'Eccentricity','Area');
-        disp([dat.Eccentricity;dat.Area]);
-        max(dat.Area,2)
+        [M,ind] = max([dat.Area]);
+        ecc = [dat.Eccentricity];
+        bodyEcc = ecc(ind);
+        efv(2) = bodyEcc;
+        
+        fv = vertcat(cfv, efv);
+        genData = horzcat(genData, fv);
     end
 end
 
