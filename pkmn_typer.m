@@ -10,6 +10,7 @@ function [] = pkmn_typer()
         printTypes(pkmnNames,pkmnTypes,typeNames);
         targets = buildTargetMatrix(pkmnTypes);
         
+        warning('off','all')
         disp('loading: Gen I');
         gen1 = loadPkmn('pokemon\gen1');
         disp('loading: Gen II');
@@ -20,11 +21,13 @@ function [] = pkmn_typer()
         gen4 = loadPkmn('pokemon\gen4');
         disp('loading: Gen V');
         gen5 = loadPkmn('pokemon\gen5');
+        warning('on','all')
 %         disp('loading: Gen VI');
 %         gen6 = loadPkmn('pokemon\gen6');
 
         % How do we need to normalize the data?
         pokemon = [gen1 gen2 gen3 gen4 gen5];
+        pokemon = pkmnNormalize(pokemon);
         save('pkmn.mat', 'pokemon', 'targets', 'typeNames');
 %         save('pkmn.mat', ...
 %         'gen1', 'gen2', 'gen3', 'gen4', 'gen5' ...
@@ -104,7 +107,7 @@ function genData = loadPkmn(gen_dir)
             cfv(c+2) = lstmap(ind, 2);  % S
             cfv(c+3) = lstmap(ind, 3);  % T
         end
-        cfv(cfvSize, 1) = size(weights, 1) - 1;
+        cfv(cfvSize, 1) = size(map, 1) - 1;
         
         % ****************************************************************
         % Edginess Data
@@ -129,9 +132,32 @@ function genData = loadPkmn(gen_dir)
         efv(2) = bodyEcc;
         
         % ****************************************************************
+        % Circles Data
+        % ****************************************************************
+        sfv = zeros(3, 1);
+        rgb = ind2rgb(img, map);
+        Rmin = 1;
+        Rmax = 16;
+        [centersBright, radiiBright] = imfindcircles(rgb,[Rmin Rmax],'ObjectPolarity','bright');
+        [centersDark, radiiDark] = imfindcircles(rgb,[Rmin Rmax],'ObjectPolarity','dark');
+        % number of circles
+        sfv(1) = size(radiiBright, 1);
+        sfv(2) = size(radiiDark, 1);
+        
+        % mean radius
+        
+        % radii variance
+        
+        % ****************************************************************
+        % Corners Data
+        % ****************************************************************
+        cns = corner(gray, 'Harris');
+        sfv(3) = size(cns, 1);
+        
+        % ****************************************************************
         % Combine Feature Vectors
         % ****************************************************************
-        fv = vertcat(cfv, efv);
+        fv = vertcat(cfv, efv, sfv);
         genData = horzcat(genData, fv);
     end
 end
@@ -160,4 +186,13 @@ function targets = buildTargetMatrix(typeList)
         end
     end
     imtool(targets);
+end
+
+function result = pkmnNormalize(pokemon)
+    for i=1:size(pokemon,1)
+        mn = min(pokemon(i, :));
+        mx = max(pokemon(i, :));
+        pokemon(i, :) = (pokemon(i, :) - mn) / mx;
+    end
+    result = pokemon;
 end
