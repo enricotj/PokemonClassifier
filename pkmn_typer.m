@@ -25,7 +25,7 @@ function [] = pkmn_typer()
 
         % How do we need to normalize the data?
         pokemon = [gen1 gen2 gen3 gen4 gen5];
-        save('pkmn.mat', 'pokemon', 'targets');
+        save('pkmn.mat', 'pokemon', 'targets', 'typeNames');
 %         save('pkmn.mat', ...
 %         'gen1', 'gen2', 'gen3', 'gen4', 'gen5' ...
 %         'pkmnNames', 'pkmnTypes', 'typeNames');
@@ -58,14 +58,16 @@ function [] = printTypes(pkmnNames,pkmnTypes,typeNames)
             out(3) = cellstr('');
         end
         disp(out);
-    end
+    end 
 end
 
 function genData = loadPkmn(gen_dir)
     files = dir(gen_dir);
     fileIndex = find(~[files.isdir]);
     
-    cfvSize = 5;
+    ncolors = 5; % number of colors to use in the cfv
+    ncf = 4; % number of color features per ncolors
+    cfvSize = ncolors*ncf + 1;
     efvSize = 2;
     %dim = 4*cfvSize + efvSize; % How many features are we using?
     %genData = zeros(size(fileIndex,2), dim);
@@ -93,15 +95,16 @@ function genData = loadPkmn(gen_dir)
             weights(j) = num / pkmnSize;
         end
         [wsort I] = sort(weights, 'descend');
-        cfv = zeros(cfvSize*4, 1); % color feature vector
-        for j=1:cfvSize
+        cfv = zeros(cfvSize, 1); % color feature vector
+        for j=1:ncolors
             ind = I(j); % get original map index
-            c = (j-1)*4 + 1; % color feature vector index
+            c = (j-1)*ncf + 1; % color feature vector index
             cfv(c) = weights(ind);      % weight
             cfv(c+1) = lstmap(ind, 1);  % L
             cfv(c+2) = lstmap(ind, 2);  % S
             cfv(c+3) = lstmap(ind, 3);  % T
         end
+        cfv(cfvSize, 1) = size(weights, 1) - 1;
         
         % ****************************************************************
         % Edginess Data
