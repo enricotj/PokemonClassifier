@@ -129,6 +129,12 @@ function genData = loadPkmn(gen_dir)
         efv(2) = bodyEcc;
         
         % ****************************************************************
+        % SFTA texture feature extraction
+        % ****************************************************************
+        % second input to sfta fucntion = 6*nf -3 where nf is the number
+        % of desired features
+        sftafv = sfta(img,5);
+        % ****************************************************************
         % Combine Feature Vectors
         % ****************************************************************
         fv = vertcat(cfv, efv);
