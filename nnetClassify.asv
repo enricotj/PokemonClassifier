@@ -40,8 +40,8 @@ function [] = nnetClassify(inputs, targets, test, testTargets, layers, typeNames
     %figure, plottrainstate(tr)
     figure, plotconfusion(targets,outputs)
     disp(typeNames);
-    set(gca,'xticklabel',[typeNames;'all']);
-    set(gca,'yticklabel',[typeNames;'all']);
+    set(gca,'xticklabel',[typeNames 'all']);
+    set(gca,'yticklabel',[typeNames);
     %figure, ploterrhist(errors)
     %figure, plotroc(targets, outputs);
 end

@@ -25,7 +25,7 @@ function [] = pkmn_typer()
 
         % How do we need to normalize the data?
         pokemon = [gen1 gen2 gen3 gen4 gen5];
-        save('pkmn.mat', 'pokemon', 'targets');
+        save('pkmn.mat', 'pokemon', 'targets','typeNames');
 %         save('pkmn.mat', ...
 %         'gen1', 'gen2', 'gen3', 'gen4', 'gen5' ...
 %         'pkmnNames', 'pkmnTypes', 'typeNames');
@@ -43,7 +43,7 @@ end
 
 function [typeNames, pkmnNames] = loadNames(typeFile, nameFile)
     typeRaw = textread(typeFile, '%s','whitespace',',');
-    typeNames = typeRaw(6:4:end);
+    typeNames = typeRaw(6:4:4*18+2);
     pkmnRaw = textread(nameFile, '%s','whitespace',',');
     pkmnNames = pkmnRaw(5:3:end);
 end
@@ -156,5 +156,4 @@ function targets = buildTargetMatrix(typeList)
             targets(typeList(i,2),i) = 1;
         end
     end
-    imtool(targets);
 end
