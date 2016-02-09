@@ -154,6 +154,11 @@ function genData = loadPkmn(gen_dir)
         cns = corner(gray, 'Harris');
         sfv(3) = size(cns, 1);
         
+        % SFTA texture feature extraction
+        % ****************************************************************
+        % second input to sfta fucntion = 6*nf -3 where nf is the number
+        % of desired features
+        %sftafv = sfta(img,5);
         % ****************************************************************
         % Combine Feature Vectors
         % ****************************************************************
