@@ -10,25 +10,25 @@ function [] = pkmn_typer()
         printTypes(pkmnNames,pkmnTypes,typeNames);
         targets = buildTargetMatrix(pkmnTypes);
         
-        warning('off','all')
         disp('loading: Gen I');
-        gen1 = loadPkmn('pokemon\gen1');
+        [gen1, train1] = loadPkmn('pokemon\gen1', 0);
         disp('loading: Gen II');
-        gen2 = loadPkmn('pokemon\gen2');
+        [gen2, train2] = loadPkmn('pokemon\gen2', size(gen1, 2));
         disp('loading: Gen III');
-        gen3 = loadPkmn('pokemon\gen3');
+        [gen3, train3] = loadPkmn('pokemon\gen3', size(gen2, 2));
         disp('loading: Gen IV');
-        gen4 = loadPkmn('pokemon\gen4');
+        [gen4, train4] = loadPkmn('pokemon\gen4', size(gen3, 2));
         disp('loading: Gen V');
-        gen5 = loadPkmn('pokemon\gen5');
-        warning('on','all')
+        [gen5, train5] = loadPkmn('pokemon\gen5', size(gen4, 2));
 %         disp('loading: Gen VI');
 %         gen6 = loadPkmn('pokemon\gen6');
 
         % How do we need to normalize the data?
         pokemon = [gen1 gen2 gen3 gen4 gen5];
         pokemon = pkmnNormalize(pokemon);
-        save('pkmn.mat', 'pokemon', 'targets', 'typeNames');
+        typeNames(19) = {'all'};
+        trainMap = [train1 train2 train3 train4 train5];
+        save('pkmn.mat', 'pokemon', 'targets', 'typeNames', 'trainMap');
 %         save('pkmn.mat', ...
 %         'gen1', 'gen2', 'gen3', 'gen4', 'gen5' ...
 %         'pkmnNames', 'pkmnTypes', 'typeNames');
@@ -36,35 +36,8 @@ function [] = pkmn_typer()
     
 end
 
-function types = loadPkmnTypes(typefile)
-   typeRaw = csvread(typefile,1,0,[1,0,1071,2]);
-   types = zeros(721,2);
-   for i=1:size(typeRaw,1)
-       types(typeRaw(i,1),typeRaw(i,3)) = typeRaw(i,2);
-   end
-end
-
-function [typeNames, pkmnNames] = loadNames(typeFile, nameFile)
-    typeRaw = textread(typeFile, '%s','whitespace',',');
-    typeNames = typeRaw(6:4:end);
-    pkmnRaw = textread(nameFile, '%s','whitespace',',');
-    pkmnNames = pkmnRaw(5:3:end);
-end
-
-function [] = printTypes(pkmnNames,pkmnTypes,typeNames)
-    for i=1:size(pkmnNames)
-        out(1) = pkmnNames(i);
-        out(2) = typeNames(pkmnTypes(i,1));
-        if(pkmnTypes(i,2) > 0)
-            out(3) = typeNames(pkmnTypes(i,2));
-        else
-            out(3) = cellstr('');
-        end
-        disp(out);
-    end 
-end
-
-function genData = loadPkmn(gen_dir)
+function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
+    warning('off','all')
     files = dir(gen_dir);
     fileIndex = find(~[files.isdir]);
     
@@ -75,9 +48,19 @@ function genData = loadPkmn(gen_dir)
     %dim = 4*cfvSize + efvSize; % How many features are we using?
     %genData = zeros(size(fileIndex,2), dim);
     genData = [];
+    trainMap = [];
     for i=1:size(fileIndex,2)
         fileName = strcat(gen_dir,'\',files(fileIndex(i)).name);
-        [img map alpha] = imread(fileName);
+        [pathstr,name,ext] = fileparts(fileName);
+        if (strcmp(ext,'.txt'))
+            continue;
+        end
+        if (isTraining(name) == 1)
+            key = i + prevGenSize;
+            trainMap = [trainMap key];
+        end
+        [img, map, alpha] = imread(fileName);
+        
         %imtool(img);
         
         % Get LST-space data
@@ -128,25 +111,35 @@ function genData = loadPkmn(gen_dir)
         dat = regionprops(img > 0,'Eccentricity','Area');
         [M,ind] = max([dat.Area]);
         ecc = [dat.Eccentricity];
-        bodyEcc = ecc(ind);
+        bodyEcc = ecc(ind);        
         efv(2) = bodyEcc;
+        
+        % Edge Orientation Histogram
+        white = gray;
+        white(find(white > 0)) = 1;
+        rp = regionprops(white,'BoundingBox');
+        bb = rp.BoundingBox;
+        c = uint8(bb(1));
+        r = uint8(bb(2));
+        w = uint8(bb(3));
+        h = uint8(bb(4));
+        croppedGray = gray(r:(r+h-1),c:(c+w-1));
+        eoh = transpose(edgeOrientationHistogram(croppedGray, 5));
+        
+        efv = vertcat(efv, eoh);
         
         % ****************************************************************
         % Circles Data
         % ****************************************************************
         sfv = zeros(3, 1);
         rgb = ind2rgb(img, map);
-        Rmin = 1;
-        Rmax = 16;
+        Rmin = 2;
+        Rmax = 32;
         [centersBright, radiiBright] = imfindcircles(rgb,[Rmin Rmax],'ObjectPolarity','bright');
         [centersDark, radiiDark] = imfindcircles(rgb,[Rmin Rmax],'ObjectPolarity','dark');
         % number of circles
         sfv(1) = size(radiiBright, 1);
         sfv(2) = size(radiiDark, 1);
-        
-        % mean radius
-        
-        % radii variance
         
         % ****************************************************************
         % Corners Data
@@ -154,17 +147,20 @@ function genData = loadPkmn(gen_dir)
         cns = corner(gray, 'Harris');
         sfv(3) = size(cns, 1);
         
+        % ****************************************************************
         % SFTA texture feature extraction
         % ****************************************************************
         % second input to sfta fucntion = 6*nf -3 where nf is the number
         % of desired features
-        %sftafv = sfta(img,5);
+        %sftafv = transpose(sfta(img,5));
+        
         % ****************************************************************
         % Combine Feature Vectors
         % ****************************************************************
-        fv = vertcat(cfv, efv, sfv);
+        fv = vertcat(cfv, efv);
         genData = horzcat(genData, fv);
     end
+    warning('on','all')
 end
 
 function [horiz,vert,sum,gradMag,gradDir,dirStrong] = sobel(grey)
@@ -178,6 +174,34 @@ function [horiz,vert,sum,gradMag,gradDir,dirStrong] = sobel(grey)
     minDir = 50;    % defined by trial and error
     dirStrong = zeros(size(grey));
     dirStrong(gradMag > minDir) = gradDir(gradMag > minDir);
+end
+
+function types = loadPkmnTypes(typefile)
+   typeRaw = csvread(typefile,1,0,[1,0,1071,2]);
+   types = zeros(721,2);
+   for i=1:size(typeRaw,1)
+       types(typeRaw(i,1),typeRaw(i,3)) = typeRaw(i,2);
+   end
+end
+
+function [typeNames, pkmnNames] = loadNames(typeFile, nameFile)
+    typeRaw = textread(typeFile, '%s','whitespace',',');
+    typeNames = typeRaw(6:4:end);
+    pkmnRaw = textread(nameFile, '%s','whitespace',',');
+    pkmnNames = pkmnRaw(5:3:end);
+end
+
+function [] = printTypes(pkmnNames,pkmnTypes,typeNames)
+    for i=1:size(pkmnNames)
+        out(1) = pkmnNames(i);
+        out(2) = typeNames(pkmnTypes(i,1));
+        if(pkmnTypes(i,2) > 0)
+            out(3) = typeNames(pkmnTypes(i,2));
+        else
+            out(3) = cellstr('');
+        end
+        disp(out);
+    end 
 end
 
 % add after end of pkmn_typer function
