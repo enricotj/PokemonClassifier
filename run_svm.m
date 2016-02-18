@@ -51,11 +51,11 @@ function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circle
 %         plotRoc(truePosRate, falsePosRate, typeNames{i});
         [TPR,FPR,ACC,dists] = trainTest(trainX, trainY, testX, testY, sigma, C, threshold);
         allDists = horzcat(allDists, dists);
-        fprintf('********************\n');
-        fprintf('%s\n', typeNames{i});
-        fprintf('TPR: %4.4f\t\t', TPR*100);
-        fprintf('FPR: %4.4f\t\t', FPR*100);
-        fprintf('ACC: %4.4f\n', ACC*100);
+        %fprintf('********************\n');
+        %fprintf('%s\n', typeNames{i});
+        %fprintf('TPR: %4.4f\t\t', TPR*100);
+        %fprintf('FPR: %4.4f\t\t', FPR*100);
+        %fprintf('ACC: %4.4f\n', ACC*100);
         totalAcc = totalAcc + ACC*100;
         totalTpr = totalTpr + TPR*100;
     end
@@ -77,16 +77,16 @@ function compareMaxDistsToTargets(dists, targets)
             incorrect = incorrect + 1;
         end
     end
-    disp(correct);
-    disp(incorrect);
-    disp(correct/(correct + incorrect));
+    %disp(correct);
+    %disp(incorrect);
+    %disp(correct/(correct + incorrect));
 end
 
 function [TPR, FPR, ACC, distances] = trainTest(trainX, trainY, testX, testY, sigma, C, threshold)
     numdimensions = size(trainX, 2);
     net = svm(numdimensions, 'rbf', sigma, C);
     net = svmtrain(net, trainX, trainY);
-
+    
     [detected , distances] = svmfwd(net, testX);
     truePos = 0;
     falseNeg = 0;
@@ -120,6 +120,7 @@ function [TPR, FPR, ACC, distances] = trainTest(trainX, trainY, testX, testY, si
     TPR = truePos/(truePos + falseNeg);
     FPR = falsePos/(falsePos + trueNeg);
     ACC = (truePos + trueNeg)/(truePos+falseNeg+falsePos+trueNeg);
+    
 end
 
 function plotRoc(truePosRate, falsePosRate, name)
