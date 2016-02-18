@@ -26,6 +26,9 @@ function [] = pkmn_typer()
         % How do we need to normalize the data?
         pokemon = [gen1 gen2 gen3 gen4 gen5];
         pokemon = pkmnNormalize(pokemon);
+        pokemon(1:20,:) = pokemon(1:20,:) * 3;
+        pokemon(21:22,:) = pokemon(21:22,:) * 1;
+        pokemon(24,:) = pokemon(24,:) * 10;
         typeNames(19) = {'all'};
         trainMap = [train1 train2 train3 train4 train5];
         save('pkmn.mat', 'pokemon', 'targets', 'typeNames', 'trainMap');
@@ -43,7 +46,7 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
     
     ncolors = 5; % number of colors to use in the cfv
     ncf = 4; % number of color features per ncolors
-    cfvSize = ncolors*ncf + 1;
+    cfvSize = ncolors*ncf;
     efvSize = 2;
     %dim = 4*cfvSize + efvSize; % How many features are we using?
     %genData = zeros(size(fileIndex,2), dim);
@@ -85,12 +88,12 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
         for j=1:ncolors
             ind = I(j); % get original map index
             c = (j-1)*ncf + 1; % color feature vector index
-            cfv(c) = weights(ind);      % weight
-            cfv(c+1) = lstmap(ind, 1);  % L
-            cfv(c+2) = lstmap(ind, 2);  % S
-            cfv(c+3) = lstmap(ind, 3);  % T
+            cfv(c) = lstmap(ind, 1);  % L
+            cfv(c+1) = lstmap(ind, 2);  % S
+            cfv(c+2) = lstmap(ind, 3);  % T
+            cfv(c+3) = weights(ind);      % weight
         end
-        cfv(cfvSize, 1) = size(map, 1) - 1;
+        %cfv(cfvSize, 1) = size(map, 1) - 1;
         
         % ****************************************************************
         % Edginess Data
@@ -115,37 +118,36 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
         efv(2) = bodyEcc;
         
         % Edge Orientation Histogram
-        white = gray;
-        white(find(white > 0)) = 1;
-        rp = regionprops(white,'BoundingBox');
-        bb = rp.BoundingBox;
-        c = uint8(bb(1));
-        r = uint8(bb(2));
-        w = uint8(bb(3));
-        h = uint8(bb(4));
-        croppedGray = gray(r:(r+h-1),c:(c+w-1));
-        eoh = transpose(edgeOrientationHistogram(croppedGray, 5));
-        
-        efv = vertcat(efv, eoh);
+%         white = gray;
+%         white(find(white > 0)) = 1;
+%         rp = regionprops(white,'BoundingBox');
+%         bb = rp.BoundingBox;
+%         c = uint8(bb(1));
+%         r = uint8(bb(2));
+%         w = uint8(bb(3));
+%         h = uint8(bb(4));
+%         croppedGray = gray(r:(r+h-1),c:(c+w-1));
+%         eoh = transpose(edgeOrientationHistogram(croppedGray, 3));
+%         %efv = vertcat(efv, eoh);
         
         % ****************************************************************
         % Circles Data
         % ****************************************************************
-        sfv = zeros(3, 1);
+        sfv = [];
         rgb = ind2rgb(img, map);
         Rmin = 2;
         Rmax = 32;
         [centersBright, radiiBright] = imfindcircles(rgb,[Rmin Rmax],'ObjectPolarity','bright');
         [centersDark, radiiDark] = imfindcircles(rgb,[Rmin Rmax],'ObjectPolarity','dark');
         % number of circles
-        sfv(1) = size(radiiBright, 1);
-        sfv(2) = size(radiiDark, 1);
+        sfv = vertcat(sfv, size(radiiBright, 1) + size(radiiDark, 1));
         
         % ****************************************************************
         % Corners Data
         % ****************************************************************
         cns = corner(gray, 'Harris');
-        sfv(3) = size(cns, 1);
+        sfv = vertcat(sfv, size(cns, 1));
+        
         
         % ****************************************************************
         % SFTA texture feature extraction
@@ -157,7 +159,7 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
         % ****************************************************************
         % Combine Feature Vectors
         % ****************************************************************
-        fv = vertcat(cfv, efv);
+        fv = vertcat(cfv, efv, sfv);
         genData = horzcat(genData, fv);
     end
     warning('on','all')
@@ -214,7 +216,7 @@ function targets = buildTargetMatrix(typeList)
             targets(typeList(i,2),i) = 1;
         end
     end
-    imtool(targets);
+    %imtool(targets);
 end
 
 function result = pkmnNormalize(pokemon)

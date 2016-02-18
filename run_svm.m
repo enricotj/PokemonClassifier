@@ -1,8 +1,15 @@
-function avg = run_svm(sigma, C, threshold, types)
+% run_svm(0.36, 6, 0, [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18], 3, 1, 3, 6.5);
+
+function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circleScale, cornerScale)
     %delete('pkmn.mat');
     pkmn_typer();
     load('pkmn.mat');
     targets = targets(:, 1:size(pokemon, 2));
+    
+    pokemon(1:20,:) = pokemon(1:20,:) * colorScale;
+    pokemon(21:22,:) = pokemon(21:22,:) * edgeScale;
+    pokemon(23,:) = pokemon(23,:) * circleScale;
+    pokemon(24,:) = pokemon(24,:) * cornerScale;
 
     % split training and test data
     trainFeatures = pokemon(:, trainMap);
