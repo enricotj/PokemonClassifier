@@ -71,8 +71,6 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
 %         end
 %         movie(F,50,5);
         
-        imtool(img,map);
-        
         % Get LST-space data
         clear lstmap;
         lstmap(:,1) = (map(:,1) + map(:,2) + map(:,3))/3;
@@ -142,7 +140,7 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
 %         xlabel('Angle (rad)');
 %         ylabel('Occurences');
 %         title('Voltorb - Electric Type');
-        
+        eoh = transpose(eoh);
         efv = vertcat(efv, eoh);
         
         % ****************************************************************
