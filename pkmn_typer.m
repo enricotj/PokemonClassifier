@@ -60,8 +60,13 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
             trainMap = [trainMap key];
         end
         [img, map, alpha] = imread(fileName);
+%         for i = 1:size(map,1)
+%             togif = img;
+%             togif(togif ~= i) = 0;
+%             imtool(togif,map);
+%         end
         
-        %imtool(img);
+        imtool(img,map);
         
         % Get LST-space data
         clear lstmap;
@@ -104,6 +109,7 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
         [h,v,s,gm,gd,d] = sobel(gray);
         edgeTotal = sum(sum(gm(2:95,2:95)));
         efv(1) = edgeTotal;
+        %imtool(d/6.28+0.5);
         
         % Circularity measure: bodyEcc
         % ecc.Eccentricity = 0 => circle
@@ -115,16 +121,22 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
         efv(2) = bodyEcc;
         
         % Edge Orientation Histogram
-        white = gray;
-        white(find(white > 0)) = 1;
-        rp = regionprops(white,'BoundingBox');
-        bb = rp.BoundingBox;
-        c = uint8(bb(1));
-        r = uint8(bb(2));
-        w = uint8(bb(3));
-        h = uint8(bb(4));
-        croppedGray = gray(r:(r+h-1),c:(c+w-1));
-        eoh = transpose(edgeOrientationHistogram(croppedGray, 5));
+%         white = img;
+%         white(find(white > 0)) = 1;
+%         rp = regionprops(white,'BoundingBox');
+%         bb = rp.BoundingBox;
+%         c = uint8(bb(1));
+%         r = uint8(bb(2));
+%         w = uint8(bb(3));
+%         h = uint8(bb(4));
+%         croppedGray = gray(r:(r+h-1),c:(c+w-1));
+%         eoh = transpose(edgeOrientationHistogram(croppedGray, 5));
+        
+        d = d(2:95,2:95);
+        [eoh, bins] = hist(d(d ~= 0));
+%         xlabel('Angle (rad)');
+%         ylabel('Occurences');
+%         title('Voltorb - Electric Type');
         
         efv = vertcat(efv, eoh);
         
@@ -214,7 +226,7 @@ function targets = buildTargetMatrix(typeList)
             targets(typeList(i,2),i) = 1;
         end
     end
-    imtool(targets);
+    %imtool(targets);
 end
 
 function result = pkmnNormalize(pokemon)
