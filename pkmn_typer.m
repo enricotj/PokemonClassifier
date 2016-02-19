@@ -12,14 +12,14 @@ function [] = pkmn_typer()
         
         disp('loading: Gen I');
         [gen1, train1] = loadPkmn('pokemon\gen1', 0);
-        disp('loading: Gen II');
-        [gen2, train2] = loadPkmn('pokemon\gen2', size(gen1, 2));
-        disp('loading: Gen III');
-        [gen3, train3] = loadPkmn('pokemon\gen3', size(gen2, 2));
-        disp('loading: Gen IV');
-        [gen4, train4] = loadPkmn('pokemon\gen4', size(gen3, 2));
-        disp('loading: Gen V');
-        [gen5, train5] = loadPkmn('pokemon\gen5', size(gen4, 2));
+%         disp('loading: Gen II');
+%         [gen2, train2] = loadPkmn('pokemon\gen2', size(gen1, 2));
+%         disp('loading: Gen III');
+%         [gen3, train3] = loadPkmn('pokemon\gen3', size(gen2, 2));
+%         disp('loading: Gen IV');
+%         [gen4, train4] = loadPkmn('pokemon\gen4', size(gen3, 2));
+%         disp('loading: Gen V');
+%         [gen5, train5] = loadPkmn('pokemon\gen5', size(gen4, 2));
 %         disp('loading: Gen VI');
 %         gen6 = loadPkmn('pokemon\gen6');
 
@@ -49,7 +49,7 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
     %genData = zeros(size(fileIndex,2), dim);
     genData = [];
     trainMap = [];
-    for i=1:size(fileIndex,2)
+    for i=76:76%size(fileIndex,2)
         fileName = strcat(gen_dir,'\',files(fileIndex(i)).name);
         [pathstr,name,ext] = fileparts(fileName);
         if (strcmp(ext,'.txt'))
@@ -60,11 +60,16 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
             trainMap = [trainMap key];
         end
         [img, map, alpha] = imread(fileName);
+        
+%         F(size(map,1)) = struct('cdata',[],'colormap',[]);
 %         for i = 1:size(map,1)
 %             togif = img;
-%             togif(togif ~= i) = 0;
-%             imtool(togif,map);
+%             togif(togif > i) = 0;
+%             imshow(imresize(ind2rgb(togif,map),5,'nearest'));
+%             drawnow
+%             F(i) = getframe;
 %         end
+%         movie(F,50,5);
         
         imtool(img,map);
         
