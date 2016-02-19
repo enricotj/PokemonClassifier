@@ -1,31 +1,26 @@
-% run_svm(5, 100, 0, [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18], 1.5, 1, 1, 1, 0);
-function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circleScale, cornerScale, test)
+% run_svm(0.36, 6, 0, [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18], 3, 1, 3, 6.5);
+% run_svm(5, 100, 0, [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18], 1.5, 1, 1, 1);
+function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circleScale, cornerScale)
     %delete('pkmn.mat');
     pkmn_typer();
     load('pkmn.mat');
     targets = targets(:, 1:size(pokemon, 2));
     
+    
+    
     pokemon(1:20,:) = pokemon(1:20,:) * colorScale;
     pokemon(21:22,:) = pokemon(21:22,:) * edgeScale;
     pokemon(23,:) = pokemon(23,:) * circleScale;
     pokemon(24,:) = pokemon(24,:) * cornerScale;
-    
-    testMap = setdiff(1:649, trainMap);
 
     % split training and test data
     trainFeatures = pokemon(:, trainMap);
     trainTargets = targets(:, trainMap);
-    if (test == 0)
-        testFeatures = pokemon;
-        testFeatures(:,trainMap) = [];
-        testTargets = targets;
-        testTargets(:,trainMap) = [];
-    else
-        testFeatures = pokemon(:,test);
-        testTargets = targets(:,test);
-        disp(size(testTargets));
-    end
-    
+    testFeatures = pokemon(:,:;
+    testFeatures(:,trainMap) = [];
+    testTargets = targets;
+    testTargets(:,trainMap) = [];
+
     % transpose the data so that it is compatible with SVM
     trainFeatures = transpose(trainFeatures);
     trainTargets = transpose(trainTargets);
@@ -70,17 +65,17 @@ function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circle
     avgAcc = totalAcc / size(types, 2);
     avgTpr = totalTpr / size(types, 2);
     avg = avgAcc;
-    compareMaxDistsToTargets(allDists, testTargets, testMap, test);
+    compareMaxDistsToTargets(allDists, testTargets);
 end
 
-function [correct,incorrect,classes] = compareMaxDistsToTargets(dists, testTargets, testMap, test)
+function [correct,incorrect,classes] = compareMaxDistsToTargets(dists, targets)
     correct = 0;
     incorrect = 0;
     classes = zeros(18, 1);
     for pok=1:size(dists,1)
         [vals,inds] = max(dists(pok,:));
         classes(inds(1)) = classes(inds(1)) + 1;
-        if (testTargets(pok,inds(1)) == 1)
+        if (targets(pok,inds(1)) == 1)
             correct = correct + 1;
         else
             incorrect = incorrect + 1;
@@ -90,14 +85,8 @@ function [correct,incorrect,classes] = compareMaxDistsToTargets(dists, testTarge
     disp(correct);
     disp(incorrect);
     disp(correct/(correct + incorrect));
-    if (test > 0)
-        ind = test;
-        disp(testTargets);
-        fprintf('%s\t%s\n%s\n',pkmnNames{ind},typeNames{find(classes == 1)},typeNames{find(testTargets == 1)});
-        fprintf('\n');
-    end
     for i=1:18
-        %fprintf('%d\t%s\n',classes(i),typeNames{i});
+        fprintf('%d\t%s\n',classes(i),typeNames{i});
     end
 end
 
