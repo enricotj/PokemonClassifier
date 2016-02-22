@@ -4,7 +4,8 @@
 function [] = nnetClassify(inputs, targets, test, testTargets, layers, typeNames, trainRatio)
     % Get toolbox license - this is an issue with the 2012 version.
     license('checkout', 'Neural_Network_Toolbox');
-    
+    load('pkmn.mat');
+    targets = targets(:,1:649);
     % Our code - nnet functions require a different format.
 %     inputs = transpose(inputs);
 %     targets(targets == -1) = 0;
@@ -17,12 +18,20 @@ function [] = nnetClassify(inputs, targets, test, testTargets, layers, typeNames
     hiddenLayerSize = layers;
     net = patternnet(hiddenLayerSize);
     net.trainParam.showWindow=0;
-
+    allInd = setdiff([1:649],trainMap);
     % Set up Division of Data for Training, Validation, Testing
-    net.divideParam.trainRatio = trainRatio/100;
-    net.divideParam.valRatio = (100 - trainRatio)/200;
-    net.divideParam.testRatio = (100 - trainRatio)/200;
-
+    %net.divideParam.trainRatio = trainRatio/100;
+    %net.divideParam.valRatio = (100 - trainRatio)/200;
+    %net.divideParam.testRatio = (100 - trainRatio)/200;
+    
+    net.divideFcn = 'divideind';
+    net.divideParam.trainInd = trainMap;
+    net.divideParam.valInd = [];
+    net.divideParam.testInd = allInd;
+    
+    disp(size(inputs));
+    disp(size(targets));
+    
     % Train the Network
     [net,tr] = train(net,inputs,targets);
 
@@ -40,6 +49,7 @@ function [] = nnetClassify(inputs, targets, test, testTargets, layers, typeNames
     %figure, plottrainstate(tr)
     %[c,cm,ind,per] = confusion(targets, outputs);
     figure, plotconfusion(targets,outputs)
+    disp(typeNames);
     set(gca,'xticklabel',[typeNames;'all']);
     set(gca,'yticklabel',[typeNames;'all']);
     %figure, ploterrhist(errors)

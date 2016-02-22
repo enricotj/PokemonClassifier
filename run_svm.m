@@ -1,4 +1,7 @@
 % run_svm(5, 100, 0, [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18], 1.5, 1, 1, 1, 0);
+% run_svm(5.1, 101, 0, [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18], 1.5, 1, 1, 1, 0);
+% run_svm(5.1, 101, 0, [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18], 1.5, 1, 1, 1, 208);
+% run_svm(5.1, 101, 0, [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18], 1.5, 1, 1, 1, 400);
 function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circleScale, cornerScale, test)
     %delete('pkmn.mat');
     pkmn_typer();
@@ -6,9 +9,9 @@ function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circle
     targets = targets(:, 1:size(pokemon, 2));
     
     pokemon(1:20,:) = pokemon(1:20,:) * colorScale;
-    pokemon(21:22,:) = pokemon(21:22,:) * edgeScale;
-    pokemon(23,:) = pokemon(23,:) * circleScale;
-    pokemon(24,:) = pokemon(24,:) * cornerScale;
+    pokemon(21:32,:) = pokemon(21:32,:) * edgeScale;
+    pokemon(33,:) = pokemon(33,:) * circleScale;
+    pokemon(34,:) = pokemon(34,:) * cornerScale;
     
     testMap = setdiff(1:649, trainMap);
 
@@ -23,7 +26,6 @@ function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circle
     else
         testFeatures = pokemon(:,test);
         testTargets = targets(:,test);
-        disp(size(testTargets));
     end
     
     % transpose the data so that it is compatible with SVM
@@ -36,6 +38,7 @@ function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circle
     totalTpr = 0;
     warning('off','all')
     allDists = [];
+    table = [];
     for t=1:size(types,2)
         i = types(t);
         trainX = trainFeatures;
@@ -48,6 +51,7 @@ function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circle
         posTestMap = find(testTargets(:, i) == 1);
         testY(posTestMap) = 1;
         
+        % for plotting roc curves
 %         truePosRate = zeros(1, 201);
 %         falsePosRate = zeros(1, 201);
 %         for t=-100:100
@@ -56,13 +60,17 @@ function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circle
 %             falsePosRate(t+101) = FPR;
 %         end
 %         plotRoc(truePosRate, falsePosRate, typeNames{i});
-        [TPR,FPR,ACC,dists] = trainTest(trainX, trainY, testX, testY, sigma, C, threshold);
+        
+        [TPR,FPR,ACC,dists,TP,FN,FP,TN] = trainTest(trainX, trainY, testX, testY, sigma, C, threshold);
         allDists = horzcat(allDists, dists);
-        fprintf('********************\n');
-        fprintf('%s\n', typeNames{i});
-        fprintf('TPR: %4.4f\t\t', TPR*100);
-        fprintf('FPR: %4.4f\t\t', FPR*100);
-        fprintf('ACC: %4.4f\n', ACC*100);
+        if (test == 0)
+%             fprintf('********************\n');
+%             fprintf('%s\n', typeNames{i});
+%             fprintf('TPR: %4.4f\t\t', TPR*100);
+%             fprintf('FPR: %4.4f\t\t', FPR*100);
+%             fprintf('ACC: %4.4f\n', ACC*100);
+            table = vertcat(table, [TP FN FP TN TPR FPR ACC]);
+        end
         totalAcc = totalAcc + ACC*100;
         totalTpr = totalTpr + TPR*100;
     end
@@ -70,6 +78,7 @@ function avg = run_svm(sigma, C, threshold, types, colorScale, edgeScale, circle
     avgAcc = totalAcc / size(types, 2);
     avgTpr = totalTpr / size(types, 2);
     avg = avgAcc;
+    save('svm_table.mat', 'table');
     compareMaxDistsToTargets(allDists, testTargets, testMap, test);
 end
 
@@ -77,31 +86,37 @@ function [correct,incorrect,classes] = compareMaxDistsToTargets(dists, testTarge
     correct = 0;
     incorrect = 0;
     classes = zeros(18, 1);
+    nc = zeros(18, 1);
+    nic = zeros(18, 1);
     for pok=1:size(dists,1)
         [vals,inds] = max(dists(pok,:));
         classes(inds(1)) = classes(inds(1)) + 1;
         if (testTargets(pok,inds(1)) == 1)
             correct = correct + 1;
+            nc(inds(1)) = nc(inds(1)) + 1;
         else
             incorrect = incorrect + 1;
+            nic(inds(1)) = nic(inds(1)) + 1;
         end
     end
     load('pkmn.mat');
-    disp(correct);
-    disp(incorrect);
-    disp(correct/(correct + incorrect));
     if (test > 0)
         ind = test;
-        disp(testTargets);
+        disp('Name\tType');
         fprintf('%s\t%s\n%s\n',pkmnNames{ind},typeNames{find(classes == 1)},typeNames{find(testTargets == 1)});
         fprintf('\n');
     end
-    for i=1:18
-        %fprintf('%d\t%s\n',classes(i),typeNames{i});
+    if (test == 0)
+%         disp(correct);
+%         disp(incorrect);
+%         disp(correct/(correct + incorrect));
+        for i=1:18
+%             fprintf('%d\t%d\t%d\t%4.8f\n',classes(i),nc(i),nic(i),nc(i)/classes(i));
+        end
     end
 end
 
-function [TPR, FPR, ACC, distances] = trainTest(trainX, trainY, testX, testY, sigma, C, threshold)
+function [TPR, FPR, ACC, distances, TP, FN, FP, TN] = trainTest(trainX, trainY, testX, testY, sigma, C, threshold)
     numdimensions = size(trainX, 2);
     net = svm(numdimensions, 'rbf', sigma, C);
     net = svmtrain(net, trainX, trainY);
@@ -139,7 +154,10 @@ function [TPR, FPR, ACC, distances] = trainTest(trainX, trainY, testX, testY, si
     TPR = truePos/(truePos + falseNeg);
     FPR = falsePos/(falsePos + trueNeg);
     ACC = (truePos + trueNeg)/(truePos+falseNeg+falsePos+trueNeg);
-    
+    TP = truePos;
+    FN = falseNeg;
+    TN = trueNeg;
+    FP = falsePos;
 end
 
 function plotRoc(truePosRate, falsePosRate, name)

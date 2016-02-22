@@ -1,6 +1,6 @@
 function [] = pkmn_typer()
     if(exist('pkmn.mat','file') > 0)
-       load('pkmn.mat');
+        load('pkmn.mat');
     else
         disp('loading: Type data');
         pkmnTypes = loadPkmnTypes('pokemon\data\pokemon_types.csv');
@@ -160,7 +160,12 @@ function [genData, trainMap] = loadPkmn(gen_dir, prevGenSize)
         % ****************************************************************
         cns = corner(gray, 'Harris');
         sfv = vertcat(sfv, size(cns, 1));
-        
+%         figure;
+%         imshow(rgb);
+%         viscircles(centersDark, radiiDark,'LineStyle','--');
+%         viscircles(centersBright, radiiBright,'LineStyle','--');
+%         hold on
+%         plot(cns(:,1), cns(:,2), 'r*');
         
         % ****************************************************************
         % SFTA texture feature extraction
